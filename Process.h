@@ -1,5 +1,7 @@
-#include <string>
+#ifndef PROCESS_H
+#define PROCESS_H
 
+#include <string>
 using namespace std;
 /*
 Basic class for Process representation
@@ -48,3 +50,5 @@ string Process::getProcess(){
 
     return (this->pid + "   " + //TODO: finish the string! this->user + "   "+ mem...cpu...upTime...;
 }
+
+#endif

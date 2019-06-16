@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
+#include <vector>
+using namespace std;
 
 // Classic helper function
 class Util {
@@ -17,6 +19,7 @@ static std::string getProgressBar(std::string percent);
 static std::ifstream getStream(std::string path);
 static std::string GetStdOutFromCmd(std::string cmd);
 static int extractIntFromString(std::string str);
+static std::vector<std::string> getVecFromStream(std::ifstream stream);
 };
 
 std::string Util::convertToTime (long int input_seconds){
@@ -71,5 +74,15 @@ int Util::extractIntFromString(string str)
     ss >> found;
     return found;
 } 
+
+std::vector<std::string> Util::getVecFromStream(std::ifstream stream){
+    string line;
+    std::getline(stream, line);
+    string str = line;
+    istringstream buf(str);
+    istream_iterator<string> beg(buf), end;
+    std::vector<std::string> values(beg, end); 
+    return values;
+}
 
 #endif

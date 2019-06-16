@@ -7,10 +7,22 @@ int main(){
     string pid = "1";
     string out;
     out = ProcessParser::getCmd(pid);
-    cout<<out<<endl;
+    cout<<"getcmd: "<<out<<endl;
     
     vector<string> list;
     list = ProcessParser::getPidList();
+    cout<<"pid list: ";
+    for (auto &item: list) {
+        cout<<item<<" ";
+    }
+    cout<<endl;
+
+
     string vmsize = ProcessParser::getVmSize("1");
-    cout<<vmsize<<endl;
+    cout<<"vmsize: "<<vmsize<<endl;
+
+    string procuptime = ProcessParser::getProcUpTime("1");
+    cout<<"procuptime: "<<procuptime<<endl;
+    string cpupercent = ProcessParser::getCpuPercent("1");
+    cout<<"cpu percent: "<<cpupercent<<endl;
 }

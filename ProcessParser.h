@@ -27,14 +27,14 @@ using namespace std;
 
 class ProcessParser{
 private:
-    std::ifstream stream;
+    ifstream stream;
     public:
     static string getCmd(string pid);
     static vector<string> getPidList();
-    static std::string getVmSize(string pid);
-    static std::string getCpuPercent(string pid);
+    static string getVmSize(string pid);
+    static string getCpuPercent(string pid);
     static long int getSysUpTime();
-    static std::string getProcUpTime(string pid);
+    static string getProcUpTime(string pid);
     static string getProcUser(string pid);
     static vector<string> getSysCpuPercent(string coreNumber = "");
     static float getSysRamPercent();
@@ -44,7 +44,7 @@ private:
     static int getTotalNumberOfProcesses();
     static int getNumberOfRunningProcesses();
     static string getOSName();
-    static std::string PrintCpuStats(std::vector<std::string> values1, std::vector<std::string>values2);
+    static string PrintCpuStats(vector<string> values1, vector<string>values2);
     static bool isPidExisting(string pid);
 };
 
@@ -54,8 +54,8 @@ private:
 string ProcessParser::getCmd(string pid){
     string path, line;
     path = Path::basePath() + pid + Path::cmdPath();
-    std::ifstream stream = Util::getStream(path);
-    std::getline(stream, line);
+    ifstream stream = Util::getStream(path);
+    getline(stream, line);
 
     return line;
 }
@@ -73,7 +73,7 @@ vector<string> ProcessParser::getPidList(){
             continue;
 
         //check if every char is a digit, otherwise start over
-        if(!std::all_of(dirp->d_name, dirp->d_name + std::strlen(dirp->d_name),
+        if(!all_of(dirp->d_name, dirp->d_name + std::strlen(dirp->d_name),
             [](char c){ return std::isdigit(c); }))
                 continue;
         //if a pid then save to list
@@ -82,28 +82,67 @@ vector<string> ProcessParser::getPidList(){
     return list;
 }
 
-std::string ProcessParser::getVmSize(string pid){
-    std::string path = Path::basePath() + pid + Path::statusPath();
-    std::ifstream file(Util::getStream(path));
-    std::string str;
-    std::size_t found;
-    std::string vmsize;
-    while (std::getline(file, str))
+//TODO: VmData vs VmSize
+string ProcessParser::getVmSize(string pid){
+    string path = Path::basePath() + pid + Path::statusPath();
+    ifstream stream(Util::getStream(path));
+    string str;
+    size_t found;
+    string vmsize;
+   
+    while (getline(stream, str))
     {   
         found=str.find("VmSize");
         if (found!=std::string::npos){
-            vmsize = Util::extractIntFromString(str);
-            return std::string(vmsize);
+            for (int i = str.find(":")+1; i <= str.length(); i++){
+                if (isdigit(char(str[i])))
+                    vmsize += str[i];
+            }
+            vmsize = to_string(stof(vmsize)/float(1024*1024));
+            break;
         }
-        // if (found!=std::string::npos){
-        //     for (int i = str.find(":"); i <= str.length(); i++){
-        //         vmsize += str[i];
-        //     }
-        //     return vmsize;
-        // }
-            
     }   
-    throw std::runtime_error("No VmSize found");
+    return vmsize;
+}
+
+string ProcessParser::getProcUpTime(string pid){
+    vector<string> values;
+    //TODO: ifstream cannot be copied, is there a better way to pass by reference?
+    values = Util::getVecFromStream(Util::getStream((Path::basePath() + pid + Path::statPath())));
+
+    float procuptime = stof(values[13]);
+    float freq = sysconf(_SC_CLK_TCK);
+    return to_string(procuptime/freq);
+}
+
+long int ProcessParser::getSysUpTime(){
+    
+    string line;
+    vector<string> values;
+    values = Util::getVecFromStream(Util::getStream(Path::basePath() + Path::upTimePath()));
+    
+    return stoi(values[0]);
+}
+
+string ProcessParser::getCpuPercent(string pid)
+{
+
+    float result;
+    vector<string> values;
+    values = Util::getVecFromStream(Util::getStream((Path::basePath()+ pid + "/" + Path::statPath())));
+    
+    float utime = stof(ProcessParser::getProcUpTime(pid));
+    float stime = stof(values[14]);
+    float cutime = stof(values[15]);
+    float cstime = stof(values[16]);
+    float starttime = stof(values[21]);
+    float uptime = ProcessParser::getSysUpTime();
+    //get system frequency (clock ticks)
+    float freq = sysconf(_SC_CLK_TCK);
+    float total_time = utime + stime + cutime + cstime;
+    float seconds = uptime - (starttime/freq);
+    result = 100.0*((total_time/freq)/seconds);
+    return to_string(result);
 }
 
 #endif
